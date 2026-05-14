@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SZTE Alma Mater - Lépjük meg! Eredmények</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Könyvtárak -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet Térkép Könyvtárak -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Animált útvonal kiegészítő -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.min.js"></script>
+
     <style>
         :root {
             --alapkek: #000080;
@@ -18,15 +27,22 @@
         .logo-box { text-align: center; margin-bottom: 25px; }
         .logo-box img { max-height: 120px; width: auto; }
         h1 { text-align: center; color: var(--alapkek); margin-bottom: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
-        .subtitle { text-align: center; color: var(--vilagoskek); margin-bottom: 30px; font-weight: 400; }
+        
         .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 8px 20px rgba(0,0,128,0.2); border-bottom: 5px solid var(--sarga); }
         .stats-card .label { font-size: 1rem; font-weight: 300; text-transform: uppercase; letter-spacing: 2px; }
         .stats-card .value { font-size: 4rem; font-weight: 800; display: block; margin-top: 5px; color: var(--sarga); }
-        table { width: 100%; border-collapse: collapse; margin-top: 40px; font-size: 0.95rem; }
+        
+        .chart-wrapper { position: relative; height: 750px; margin-top: 20px; margin-bottom: 40px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 40px; font-size: 0.95rem; margin-bottom: 50px; }
         th, td { padding: 18px; text-align: left; border-bottom: 1px solid #eee; }
         th { color: var(--alapkek); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         tr:hover { background-color: #fcfcfc; }
-        .chart-wrapper { position: relative; height: 750px; margin-top: 20px; }
+
+        /* Térkép szekció */
+        .map-section { margin-top: 50px; border-top: 2px solid #f0f0f0; padding-top: 40px; }
+        .map-section h2 { text-align: center; color: var(--alapkek); text-transform: uppercase; margin-bottom: 20px; }
+        #map { height: 500px; width: 100%; border-radius: 15px; z-index: 1; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -57,27 +73,25 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    <!-- Animált térkép legalul -->
+    <div class="map-section">
+        <h2>Virtuális Expedíció Útvonala</h2>
+        <div id="map"></div>
+    </div>
 </div>
 
 <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRAobnWXpKnU1uRe5mbFogcacGNhwjLtWKtKS8kcyzJFhTwAf1DCkB-CfJY4GSlcyFp63RsrFKSrAK/pub?gid=38589347&single=true&output=csv';
 
-    // NÉVFORDÍTÓ TÁBLÁZAT - Itt tudod bővíteni a listát
     const fullNames = {
-        'ÁJTK': 'Állam- és Jogtudományi Kar',
-        'BTK': 'Bölcsészettudományi és Társadalomtudományi Kar',
-        'ETSZK': 'Egészségtudományi és Szociális Képzési Kar',
-        'FOK': 'Fogorvostudományi Kar',
-        'GTK': 'Gazdaságtudományi Kar',
-        'GYTK': 'Gyógyszerésztudományi Kar',
-        'JGYPK': 'Juhász Gyula Pedagógusképző Kar',
-        'MGK': 'Mezőgazdasági Kar',
-        'MK': 'Mérnöki Kar',
-        'SZAOK': 'Szent-Györgyi Albert Orvostudományi Kar',
-        'TTIK': 'Természettudományi és Informatikai Kar',
-        'KKL': 'Klebelsberg Könyvtár és Levéltár',
-        'SZAKK': 'Szent-Györgyi Albert Klinikai Központ',
-        'KKL': 'SZTE Klebelsberg Könyvtár'
+        'ÁJTK': 'Állam- és Jogtudományi Kar', 'BTK': 'Bölcsészettudományi és Társadalomtudományi Kar',
+        'ETSZK': 'Egészségtudományi és Szociális Képzési Kar', 'FOK': 'Fogorvostudományi Kar',
+        'GTK': 'Gazdaságtudományi Kar', 'GYTK': 'Gyógyszerésztudományi Kar',
+        'JGYPK': 'Juhász Gyula Pedagógusképző Kar', 'MGK': 'Mezőgazdasági Kar',
+        'MK': 'Mérnöki Kar', 'SZAOK': 'Szent-Györgyi Albert Orvostudományi Kar',
+        'TTIK': 'Természettudományi és Informatikai Kar', 'KKL': 'SZTE Klebelsberg Könyvtár',
+        'SZAKK': 'Szent-Györgyi Albert Klinikai Központ'
     };
 
     function cleanNumber(val) {
@@ -88,26 +102,19 @@
 
     function updateDashboard() {
         Papa.parse(csvUrl, {
-            download: true,
-            header: true,
+            download: true, header: true,
             complete: function(results) {
                 const rawData = results.data;
-                
                 let sortedData = rawData
                     .filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
                     .map(row => {
                         const abbr = row.Kar.trim();
-                        return {
-                            // Ha benne van a listánkban, lecseréljük, ha nincs, marad az eredeti
-                            kar: fullNames[abbr] || abbr,
-                            km: cleanNumber(row.km)
-                        };
+                        return { kar: fullNames[abbr] || abbr, km: cleanNumber(row.km) };
                     })
                     .sort((a, b) => b.km - a.km);
 
                 renderTable(sortedData);
                 renderChart(sortedData);
-                
                 const totalKm = sortedData.reduce((sum, item) => sum + item.km, 0);
                 document.getElementById('overall').innerText = `${totalKm.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km`;
             }
@@ -118,11 +125,7 @@
         const tbody = document.querySelector('#leaderboardTable tbody');
         tbody.innerHTML = '';
         data.forEach((item, index) => {
-            const row = `<tr>
-                <td style="font-weight:600; color:var(--alapkek);">${index + 1}.</td>
-                <td style="font-weight:400;">${item.kar}</td>
-                <td style="font-weight:600; color:var(--vilagoskek);">${item.km.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</td>
-            </tr>`;
+            const row = `<tr><td>${index + 1}.</td><td>${item.kar}</td><td>${item.km.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</td></tr>`;
             tbody.innerHTML += row;
         });
     }
@@ -131,39 +134,81 @@
     function renderChart(data) {
         const ctx = document.getElementById('leaderboardChart').getContext('2d');
         if (myChart) myChart.destroy();
-
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(item => item.kar),
-                datasets: [{
-                    label: 'Megtett kilométerek',
-                    data: data.map(item => item.km),
-                    backgroundColor: '#0088cc',
-                    hoverBackgroundColor: '#000080',
-                    borderRadius: 8,
-                    barThickness: 22
-                }]
+                datasets: [{ label: 'km', data: data.map(item => item.km), backgroundColor: '#0088cc', borderRadius: 8 }]
             },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-                    y: { 
-                        ticks: { font: { family: 'Poppins', size: 11, weight: 'bold' }, color: '#000080' }
-                    }
-                }
-            }
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
+    // --- TÉRKÉP LOGIKA ---
+    const routeCoords = [
+        [46.253, 20.141], // Szeged
+        [51.507, -0.127], // London
+        [46.100, 19.665], // Subotica
+        [48.208, 16.373], // Vienna
+        [37.983, 23.727], // Athens
+        [55.864, -4.251], // Glasgow
+        [31.945, 35.928], // Amman
+        [52.367, 4.904],  // Amsterdam
+        [52.520, 13.405], // Berlin
+        [50.850, 4.351],  // Brussels
+        [55.676, 12.568], // Copenhagen
+        [53.270, -9.056], // Galway
+        [41.008, 28.978], // Istanbul
+        [46.062, 20.048], // Kanjiža
+        [40.416, -3.703], // Madrid
+        [55.429, 13.820], // Ystad
+        [34.000, -81.034],// Columbia, SC
+        [18.520, 73.856], // Pune
+        [17.975, 102.633],// Vientiane
+        [-1.944, 30.061], // Kigali
+        [46.253, 20.141]  // Vissza Szegedre
+    ];
+
+    // Térkép inicializálása
+    const map = L.map('map').setView([30, 10], 2);
+
+    // Letisztult térkép stílus (CartoDB Positron)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Animált útvonal (AntPath) - SZTE színekkel
+    const path = L.polyline.antPath(routeCoords, {
+        delay: 2000,
+        dashArray: [10, 20],
+        weight: 3,
+        color: '#0088cc',
+        pulseColor: '#ffeb00',
+        paused: false,
+        reverse: false
+    }).addTo(map);
+
+    // Város jelölők hozzáadása
+    const cities = [
+        "Szeged", "London", "Subotica", "Vienna", "Athens", "Glasgow", "Amman", 
+        "Amsterdam", "Berlin", "Brussels", "Copenhagen", "Galway", "Istanbul", 
+        "Kanjiža", "Madrid", "Ystad", "Columbia, SC", "Pune", "Vientiane", "Kigali"
+    ];
+
+    routeCoords.forEach((coord, i) => {
+        if (i < cities.length) {
+            L.circleMarker(coord, {
+                radius: 4,
+                fillColor: "#000080",
+                color: "#fff",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup(cities[i]);
+        }
+    });
+
     updateDashboard();
-    setInterval(updateDashboard, 300000);
 </script>
 
 </body>
