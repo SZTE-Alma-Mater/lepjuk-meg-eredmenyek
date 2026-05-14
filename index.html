@@ -36,23 +36,19 @@
         th { color: var(--alapkek); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         tr:hover { background-color: #fcfcfc; }
 
-        /* Térkép stílusok */
         .map-section { margin-top: 50px; border-top: 2px solid #f0f0f0; padding-top: 40px; }
         .map-section h2 { text-align: center; color: var(--alapkek); text-transform: uppercase; margin-bottom: 20px; }
         #map { height: 600px; width: 100%; border-radius: 15px; z-index: 1; border: 1px solid #ddd; }
 
-        /* Kilométer jelölők a térképen */
-        .dist-label {
-            background: white;
-            border: 1px solid var(--vilagoskek);
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
+        /* Városnév feliratok stílusa */
+        .leaflet-tooltip-own {
+            background: transparent;
+            border: none;
+            box-shadow: none;
             color: var(--alapkek);
-            text-align: center;
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-weight: 600;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px white, -1px -1px 2px white;
         }
     </style>
 </head>
@@ -154,29 +150,29 @@
         });
     }
 
-    // --- TÉRKÉP ADATOK ÉS LOGIKA ---
+    // --- TÉRKÉP ADATOK ---
     const expedition = [
-        { name: "Szeged", coords: [46.253, 20.141], distNext: "1450 km" },
-        { name: "London", coords: [51.507, -0.127], distNext: "1675 km" },
-        { name: "Subotica", coords: [46.100, 19.665], distNext: "300 km" },
-        { name: "Vienna", coords: [48.208, 16.373], distNext: "1280 km" },
-        { name: "Athens", coords: [37.983, 23.727], distNext: "2800 km" },
-        { name: "Glasgow", coords: [55.864, -4.251], distNext: "3800 km" },
-        { name: "Amman", coords: [31.945, 35.928], distNext: "3300 km" },
-        { name: "Amsterdam", coords: [52.367, 4.904], distNext: "575 km" },
-        { name: "Berlin", coords: [52.520, 13.405], distNext: "650 km" },
-        { name: "Brussels", coords: [50.850, 4.351], distNext: "800 km" },
-        { name: "Copenhagen", coords: [55.676, 12.568], distNext: "1250 km" },
-        { name: "Galway", coords: [53.270, -9.056], distNext: "3200 km" },
-        { name: "Istanbul", coords: [41.008, 28.978], distNext: "1100 km" },
-        { name: "Kanjiža", coords: [46.062, 20.048], distNext: "2000 km" },
-        { name: "Madrid", coords: [40.416, -3.703], distNext: "2400 km" },
-        { name: "Ystad", coords: [55.429, 13.820], distNext: "7000 km" },
-        { name: "Columbia, SC", coords: [34.000, -81.034], distNext: "13500 km" },
-        { name: "Pune", coords: [18.520, 73.856], distNext: "2800 km" },
-        { name: "Vientiane", coords: [17.975, 102.633], distNext: "9000 km" },
-        { name: "Kigali", coords: [-1.944, 30.061], distNext: "6100 km" },
-        { name: "Szeged", coords: [46.253, 20.141], distNext: "" }
+        { name: "Szeged", coords: [46.253, 20.141], dist: "1450 km" },
+        { name: "London", coords: [51.507, -0.127], dist: "1675 km" },
+        { name: "Subotica", coords: [46.100, 19.665], dist: "300 km" },
+        { name: "Vienna", coords: [48.208, 16.373], dist: "1280 km" },
+        { name: "Athens", coords: [37.983, 23.727], dist: "2800 km" },
+        { name: "Glasgow", coords: [55.864, -4.251], dist: "3800 km" },
+        { name: "Amman", coords: [31.945, 35.928], dist: "3300 km" },
+        { name: "Amsterdam", coords: [52.367, 4.904], dist: "575 km" },
+        { name: "Berlin", coords: [52.520, 13.405], dist: "650 km" },
+        { name: "Brussels", coords: [50.850, 4.351], dist: "800 km" },
+        { name: "Copenhagen", coords: [55.676, 12.568], dist: "1250 km" },
+        { name: "Galway", coords: [53.270, -9.056], dist: "3200 km" },
+        { name: "Istanbul", coords: [41.008, 28.978], dist: "1100 km" },
+        { name: "Kanjiža", coords: [46.062, 20.048], dist: "2000 km" },
+        { name: "Madrid", coords: [40.416, -3.703], dist: "2400 km" },
+        { name: "Ystad", coords: [55.429, 13.820], dist: "7000 km" },
+        { name: "Columbia, SC", coords: [34.000, -81.034], dist: "13500 km" },
+        { name: "Pune", coords: [18.520, 73.856], dist: "2800 km" },
+        { name: "Vientiane", coords: [17.975, 102.633], dist: "9000 km" },
+        { name: "Kigali", coords: [-1.944, 30.061], dist: "6100 km" },
+        { name: "Szeged", coords: [46.253, 20.141], dist: "" }
     ];
 
     const map = L.map('map').setView([30, 10], 2);
@@ -184,31 +180,35 @@
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    const routeLine = expedition.map(p => p.coords);
-    
-    L.polyline.antPath(routeLine, {
-        delay: 2500, dashArray: [10, 20], weight: 3, color: '#0088cc', pulseColor: '#ffeb00'
-    }).addTo(map);
-
+    // Városok és szakaszok kirajzolása
     expedition.forEach((point, i) => {
-        // Város megálló jelölése
+        // Állandó névfelirat a város felett
         L.circleMarker(point.coords, {
             radius: 5, fillColor: "#000080", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1
-        }).addTo(map).bindTooltip(point.name, { permanent: false, direction: "top" });
+        }).addTo(map).bindTooltip(point.name, { 
+            permanent: true, 
+            direction: "top", 
+            className: "leaflet-tooltip-own",
+            offset: [0, -5]
+        });
 
-        // Kilométer felirat a szakaszok felénél
-        if (i < expedition.length - 1 && point.distNext !== "") {
+        // Szakasz rajzolása a következő városig
+        if (i < expedition.length - 1) {
             const nextPoint = expedition[i+1];
-            const midLat = (point.coords[0] + nextPoint.coords[0]) / 2;
-            const midLng = (point.coords[1] + nextPoint.coords[1]) / 2;
-
-            L.marker([midLat, midLng], {
-                icon: L.divIcon({
-                    className: 'dist-label',
-                    html: point.distNext,
-                    iconSize: [60, 20]
-                })
+            const segment = L.polyline.antPath([point.coords, nextPoint.coords], {
+                delay: 2500, dashArray: [10, 20], weight: 3, color: '#0088cc', pulseColor: '#ffeb00'
             }).addTo(map);
+
+            // Távolság megjelenítése csak kurzorhoz (hover)
+            segment.bindTooltip(`Távolság: ${point.dist}`, { sticky: true });
+
+            // Vizuális visszajelzés hover esetén
+            segment.on('mouseover', function() {
+                this.setStyle({ weight: 6, color: '#000080' });
+            });
+            segment.on('mouseout', function() {
+                this.setStyle({ weight: 3, color: '#0088cc' });
+            });
         }
     });
 
