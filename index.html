@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SZTE Alma Mater - Lépjük meg! Eredmények</title>
-    <!-- Poppins betűtípus beágyazása -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,90 +13,26 @@
             --vilagoskek: #0088cc;
             --sarga: #ffeb00;
         }
-
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #f8f9fa; 
-            margin: 0; 
-            padding: 20px; 
-            color: #333; 
-        }
-
-        .container { 
-            max-width: 1000px; 
-            margin: auto; 
-            background: white; 
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
-        }
-        
-        /* Logó stílusa */
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
         .logo-box { text-align: center; margin-bottom: 25px; }
         .logo-box img { max-height: 120px; width: auto; }
-
-        h1 { 
-            text-align: center; 
-            color: var(--alapkek); 
-            margin-bottom: 5px; 
-            font-weight: 800; 
-            text-transform: uppercase;
-            letter-spacing: -1px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: var(--vilagoskek);
-            margin-bottom: 30px;
-            font-weight: 400;
-        }
-        
-        /* Összesítő kártya az arculati színekkel */
-        .stats-card { 
-            background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); 
-            color: white; 
-            text-align: center; 
-            padding: 35px; 
-            border-radius: 15px; 
-            margin-bottom: 40px;
-            box-shadow: 0 8px 20px rgba(0,0,128,0.2);
-            border-bottom: 5px solid var(--sarga);
-        }
-        .stats-card .label { 
-            font-size: 1rem; 
-            font-weight: 300; 
-            text-transform: uppercase; 
-            letter-spacing: 2px;
-        }
-        .stats-card .value { 
-            font-size: 4rem; 
-            font-weight: 800; 
-            display: block; 
-            margin-top: 5px;
-            color: var(--sarga); /* A kilométer sárgával kiemelve */
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+        h1 { text-align: center; color: var(--alapkek); margin-bottom: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
+        .subtitle { text-align: center; color: var(--vilagoskek); margin-bottom: 30px; font-weight: 400; }
+        .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 8px 20px rgba(0,0,128,0.2); border-bottom: 5px solid var(--sarga); }
+        .stats-card .label { font-size: 1rem; font-weight: 300; text-transform: uppercase; letter-spacing: 2px; }
+        .stats-card .value { font-size: 4rem; font-weight: 800; display: block; margin-top: 5px; color: var(--sarga); }
+        table { width: 100%; border-collapse: collapse; margin-top: 40px; font-size: 0.95rem; }
         th, td { padding: 18px; text-align: left; border-bottom: 1px solid #eee; }
-        th { 
-            background-color: #fff; 
-            color: var(--alapkek); 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-        }
-        tr:last-child td { border-bottom: none; }
+        th { color: var(--alapkek); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         tr:hover { background-color: #fcfcfc; }
-        
-        .chart-wrapper { position: relative; height: 650px; margin-top: 20px; }
+        .chart-wrapper { position: relative; height: 750px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="logo-box">
-        <!-- Az általad küldött logó fájlnévvel -->
         <img src="AM_logo_Rajztábla 1 másolat.png" alt="SZTE Alma Mater Logó">
     </div>
 
@@ -127,6 +62,24 @@
 <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRAobnWXpKnU1uRe5mbFogcacGNhwjLtWKtKS8kcyzJFhTwAf1DCkB-CfJY4GSlcyFp63RsrFKSrAK/pub?gid=38589347&single=true&output=csv';
 
+    // NÉVFORDÍTÓ TÁBLÁZAT - Itt tudod bővíteni a listát
+    const fullNames = {
+        'ÁJTK': 'Állam- és Jogtudományi Kar',
+        'BTK': 'Bölcsészettudományi és Társadalomtudományi Kar',
+        'ETSZK': 'Egészségtudományi és Szociális Képzési Kar',
+        'FOK': 'Fogorvostudományi Kar',
+        'GTK': 'Gazdaságtudományi Kar',
+        'GYTK': 'Gyógyszerésztudományi Kar',
+        'JGYPK': 'Juhász Gyula Pedagógusképző Kar',
+        'MGK': 'Mezőgazdasági Kar',
+        'MK': 'Mérnöki Kar',
+        'SZAOK': 'Szent-Györgyi Albert Orvostudományi Kar',
+        'TTIK': 'Természettudományi és Informatikai Kar',
+        'KKL': 'Klebelsberg Könyvtár és Levéltár',
+        'SZAKK': 'Szent-Györgyi Albert Klinikai Központ',
+        'KKL': 'SZTE Klebelsberg Könyvtár'
+    };
+
     function cleanNumber(val) {
         if (!val) return 0;
         let cleaned = val.toString().replace(/\s/g, '').replace(',', '.');
@@ -142,10 +95,14 @@
                 
                 let sortedData = rawData
                     .filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
-                    .map(row => ({
-                        kar: row.Kar.trim(),
-                        km: cleanNumber(row.km)
-                    }))
+                    .map(row => {
+                        const abbr = row.Kar.trim();
+                        return {
+                            // Ha benne van a listánkban, lecseréljük, ha nincs, marad az eredeti
+                            kar: fullNames[abbr] || abbr,
+                            km: cleanNumber(row.km)
+                        };
+                    })
                     .sort((a, b) => b.km - a.km);
 
                 renderTable(sortedData);
@@ -175,7 +132,6 @@
         const ctx = document.getElementById('leaderboardChart').getContext('2d');
         if (myChart) myChart.destroy();
 
-        // Chart színei az arculathoz igazítva
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -183,8 +139,8 @@
                 datasets: [{
                     label: 'Megtett kilométerek',
                     data: data.map(item => item.km),
-                    backgroundColor: '#0088cc', // Világoskék oszlopok
-                    hoverBackgroundColor: '#000080', // Alapkék hoverre
+                    backgroundColor: '#0088cc',
+                    hoverBackgroundColor: '#000080',
                     borderRadius: 8,
                     barThickness: 22
                 }]
@@ -197,17 +153,9 @@
                     legend: { display: false }
                 },
                 scales: {
-                    x: { 
-                        beginAtZero: true, 
-                        grid: { color: '#f0f0f0' },
-                        ticks: { font: { family: 'Poppins' } }
-                    },
+                    x: { beginAtZero: true, grid: { color: '#f0f0f0' } },
                     y: { 
-                        grid: { display: false },
-                        ticks: { 
-                            font: { family: 'Poppins', weight: 'bold' },
-                            color: '#000080'
-                        }
+                        ticks: { font: { family: 'Poppins', size: 11, weight: 'bold' }, color: '#000080' }
                     }
                 }
             }
