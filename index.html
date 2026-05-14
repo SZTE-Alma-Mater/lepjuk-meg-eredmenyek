@@ -4,27 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SZTE Alma Mater - Lépjük meg! Eredmények</title>
+    <!-- Poppins betűtípus beágyazása -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #0056b3; }
-        .stats-box { text-align: center; font-size: 1.5em; margin: 20px 0; padding: 20px; background: #e9f2ff; border-radius: 8px; border-left: 5px solid #0056b3; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #0056b3; color: white; }
-        tr:hover { background-color: #f1f1f1; }
-        canvas { margin-top: 30px; }
+        :root {
+            --alapkek: #000080;
+            --vilagoskek: #0088cc;
+            --sarga: #ffeb00;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f8f9fa; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333; 
+        }
+
+        .container { 
+            max-width: 1000px; 
+            margin: auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
+        }
+        
+        /* Logó stílusa */
+        .logo-box { text-align: center; margin-bottom: 25px; }
+        .logo-box img { max-height: 120px; width: auto; }
+
+        h1 { 
+            text-align: center; 
+            color: var(--alapkek); 
+            margin-bottom: 5px; 
+            font-weight: 800; 
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--vilagoskek);
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+        
+        /* Összesítő kártya az arculati színekkel */
+        .stats-card { 
+            background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); 
+            color: white; 
+            text-align: center; 
+            padding: 35px; 
+            border-radius: 15px; 
+            margin-bottom: 40px;
+            box-shadow: 0 8px 20px rgba(0,0,128,0.2);
+            border-bottom: 5px solid var(--sarga);
+        }
+        .stats-card .label { 
+            font-size: 1rem; 
+            font-weight: 300; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+        }
+        .stats-card .value { 
+            font-size: 4rem; 
+            font-weight: 800; 
+            display: block; 
+            margin-top: 5px;
+            color: var(--sarga); /* A kilométer sárgával kiemelve */
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+        th, td { padding: 18px; text-align: left; border-bottom: 1px solid #eee; }
+        th { 
+            background-color: #fff; 
+            color: var(--alapkek); 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #fcfcfc; }
+        
+        .chart-wrapper { position: relative; height: 650px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>SZTE Alma Mater - Lépjük meg!</h1>
-    <div id="overall" class="stats-box">Összesített eredmény: Betöltés...</div>
+    <div class="logo-box">
+        <!-- Az általad küldött logó fájlnévvel -->
+        <img src="AM_logo_Rajztábla 1 másolat.png" alt="SZTE Alma Mater Logó">
+    </div>
+
+    <h1>Lépjük meg!</h1>
+    <div class="subtitle">Közösségi Kihívás Dashboard</div>
     
-    <canvas id="leaderboardChart"></canvas>
+    <div class="stats-card">
+        <span class="label">Eddig közösen megtett távolság</span>
+        <span id="overall" class="value">... km</span>
+    </div>
+
+    <div class="chart-wrapper">
+        <canvas id="leaderboardChart"></canvas>
+    </div>
 
     <table id="leaderboardTable">
         <thead>
@@ -34,29 +121,31 @@
                 <th>Összesen (km)</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Itt jelennek meg az adatok -->
-        </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
 <script>
-    // IDE MÁSOLD A GOOGLE SHEETS CSV LINKJÉT:
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRAobnWXpKnU1uRe5mbFogcacGNhwjLtWKtKS8kcyzJFhTwAf1DCkB-CfJY4GSlcyFp63RsrFKSrAK/pub?gid=38589347&single=true&output=csv';
+
+    function cleanNumber(val) {
+        if (!val) return 0;
+        let cleaned = val.toString().replace(/\s/g, '').replace(',', '.');
+        return parseFloat(cleaned) || 0;
+    }
 
     function updateDashboard() {
         Papa.parse(csvUrl, {
             download: true,
             header: true,
             complete: function(results) {
-                const data = results.data;
+                const rawData = results.data;
                 
-                // Adatok tisztítása és rendezése (feltételezve, hogy 'Kar' és 'km' az oszlopfejléc)
-                let sortedData = data
-                    .filter(row => row.Kar && row.km)
+                let sortedData = rawData
+                    .filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
                     .map(row => ({
-                        kar: row.Kar,
-                        km: parseFloat(row.km.replace(',', '.')) || 0
+                        kar: row.Kar.trim(),
+                        km: cleanNumber(row.km)
                     }))
                     .sort((a, b) => b.km - a.km);
 
@@ -64,7 +153,7 @@
                 renderChart(sortedData);
                 
                 const totalKm = sortedData.reduce((sum, item) => sum + item.km, 0);
-                document.getElementById('overall').innerText = `Összesített eredmény: ${totalKm.toLocaleString('hu-HU')} km`;
+                document.getElementById('overall').innerText = `${totalKm.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km`;
             }
         });
     }
@@ -74,9 +163,9 @@
         tbody.innerHTML = '';
         data.forEach((item, index) => {
             const row = `<tr>
-                <td>${index + 1}.</td>
-                <td>${item.kar}</td>
-                <td>${item.km.toLocaleString('hu-HU')}</td>
+                <td style="font-weight:600; color:var(--alapkek);">${index + 1}.</td>
+                <td style="font-weight:400;">${item.kar}</td>
+                <td style="font-weight:600; color:var(--vilagoskek);">${item.km.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</td>
             </tr>`;
             tbody.innerHTML += row;
         });
@@ -85,9 +174,9 @@
     let myChart;
     function renderChart(data) {
         const ctx = document.getElementById('leaderboardChart').getContext('2d');
-        
         if (myChart) myChart.destroy();
 
+        // Chart színei az arculathoz igazítva
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -95,18 +184,39 @@
                 datasets: [{
                     label: 'Megtett kilométerek',
                     data: data.map(item => item.km),
-                    backgroundColor: '#0056b3',
-                    borderRadius: 5
+                    backgroundColor: '#0088cc', // Világoskék oszlopok
+                    hoverBackgroundColor: '#000080', // Alapkék hoverre
+                    borderRadius: 8,
+                    barThickness: 22
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
-                scales: { y: { beginAtZero: true } }
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true, 
+                        grid: { color: '#f0f0f0' },
+                        ticks: { font: { family: 'Poppins' } }
+                    },
+                    y: { 
+                        grid: { display: false },
+                        ticks: { 
+                            font: { family: 'Poppins', weight: 'bold' },
+                            color: '#000080'
+                        }
+                    }
+                }
             }
         });
     }
 
     updateDashboard();
+    setInterval(updateDashboard, 300000);
 </script>
 
 </body>
