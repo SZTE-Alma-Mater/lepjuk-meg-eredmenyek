@@ -11,37 +11,45 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Nyilakhoz szükséges kiegészítő -->
-    <script src="https://cdn.jsdelivr.net/npm/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylinedecorator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.min.js"></script>
 
     <style>
-        :root { --alapkek: #000080; --vilagoskek: #0088cc; --sarga: #ffeb00; }
-        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        :root {
+            --alapkek: #000080;
+            --vilagoskek: #0088cc;
+            --sarga: #ffeb00;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
         .logo-box { text-align: center; margin-bottom: 25px; }
         .logo-box img { max-height: 120px; width: auto; }
-        h1 { text-align: center; color: var(--alapkek); font-weight: 800; text-transform: uppercase; }
-        .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 40px; border-bottom: 5px solid var(--sarga); }
-        .stats-card .value { font-size: 4rem; font-weight: 800; color: var(--sarga); }
-        .chart-wrapper { height: 750px; margin-bottom: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 50px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        .map-section { border-top: 2px solid #f0f0f0; padding-top: 40px; }
-        #map { height: 650px; width: 100%; border-radius: 15px; border: 1px solid #ddd; }
+        h1 { text-align: center; color: var(--alapkek); margin-bottom: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
         
-        /* Számozott körök stílusa a térképen */
-        .number-icon {
-            background: var(--alapkek);
-            border: 2px solid white;
-            border-radius: 50%;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            line-height: 20px;
-            font-size: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 8px 20px rgba(0,0,128,0.2); border-bottom: 5px solid var(--sarga); }
+        .stats-card .label { font-size: 1rem; font-weight: 300; text-transform: uppercase; letter-spacing: 2px; }
+        .stats-card .value { font-size: 4rem; font-weight: 800; display: block; margin-top: 5px; color: var(--sarga); }
+        
+        .chart-wrapper { position: relative; height: 750px; margin-top: 20px; margin-bottom: 40px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 40px; font-size: 0.95rem; margin-bottom: 50px; }
+        th, td { padding: 18px; text-align: left; border-bottom: 1px solid #eee; }
+        th { color: var(--alapkek); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        tr:hover { background-color: #fcfcfc; }
+
+        .map-section { margin-top: 50px; border-top: 2px solid #f0f0f0; padding-top: 40px; }
+        .map-section h2 { text-align: center; color: var(--alapkek); text-transform: uppercase; margin-bottom: 20px; }
+        #map { height: 600px; width: 100%; border-radius: 15px; z-index: 1; border: 1px solid #ddd; }
+
+        /* Városnév feliratok stílusa */
+        .leaflet-tooltip-own {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            color: var(--alapkek);
+            font-weight: 600;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px white, -1px -1px 2px white;
         }
-        .leaflet-tooltip-own { background: white; border: 1px solid var(--alapkek); font-weight: 600; padding: 2px 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -54,8 +62,8 @@
     <h1>SZTE Lépjük meg!</h1>
     
     <div class="stats-card">
-        <span style="text-transform:uppercase; letter-spacing:2px;">Eddig közösen megtett távolság</span>
-        <span id="overall" class="stats-card .value">... km</span>
+        <span class="label">Eddig közösen megtett távolság</span>
+        <span id="overall" class="value">... km</span>
     </div>
 
     <div class="chart-wrapper">
@@ -64,13 +72,17 @@
 
     <table id="leaderboardTable">
         <thead>
-            <tr><th>Helyezés</th><th>Kar / Egység</th><th>Összesen (km)</th></tr>
+            <tr>
+                <th>Helyezés</th>
+                <th>Kar / Egység</th>
+                <th>Összesen (km)</th>
+            </tr>
         </thead>
         <tbody></tbody>
     </table>
 
     <div class="map-section">
-        <h2>Virtuális Expedíció Útvonala</h2>
+        <h2>SZTE Lépjük meg! a világ körül</h2>
         <div id="map"></div>
     </div>
 </div>
@@ -98,21 +110,30 @@
         Papa.parse(csvUrl, {
             download: true, header: true,
             complete: function(results) {
-                const data = results.data.filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
-                    .map(row => ({ kar: fullNames[row.Kar.trim()] || row.Kar.trim(), km: cleanNumber(row.km) }))
+                const rawData = results.data;
+                let sortedData = rawData
+                    .filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
+                    .map(row => {
+                        const abbr = row.Kar.trim();
+                        return { kar: fullNames[abbr] || abbr, km: cleanNumber(row.km) };
+                    })
                     .sort((a, b) => b.km - a.km);
 
-                renderTable(data);
-                renderChart(data);
-                const total = data.reduce((s, i) => s + i.km, 0);
-                document.getElementById('overall').innerHTML = `<br><span style="font-size: 4rem; font-weight: 800; color: #ffeb00;">${total.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</span>`;
+                renderTable(sortedData);
+                renderChart(sortedData);
+                const totalKm = sortedData.reduce((sum, item) => sum + item.km, 0);
+                document.getElementById('overall').innerText = `${totalKm.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km`;
             }
         });
     }
 
     function renderTable(data) {
         const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = data.map((item, i) => `<tr><td>${i+1}.</td><td>${item.kar}</td><td>${item.km.toLocaleString('hu-HU', {maximumFractionDigits:1})} km</td></tr>`).join('');
+        tbody.innerHTML = '';
+        data.forEach((item, index) => {
+            const row = `<tr><td>${index + 1}.</td><td>${item.kar}</td><td>${item.km.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</td></tr>`;
+            tbody.innerHTML += row;
+        });
     }
 
     let myChart;
@@ -122,57 +143,72 @@
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(d => d.kar),
-                datasets: [{ label: 'km', data: data.map(d => d.km), backgroundColor: '#0088cc', borderRadius: 8 }]
+                labels: data.map(item => item.kar),
+                datasets: [{ label: 'km', data: data.map(item => item.km), backgroundColor: '#0088cc', borderRadius: 8 }]
             },
             options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
-    // --- TÉRKÉP NYILAKKAL ÉS SZÁMOKKAL ---
+    // --- TÉRKÉP ADATOK ---
     const expedition = [
-        { name: "Szeged", coords: [46.253, 20.141], dist: "1450 km" }, { name: "London", coords: [51.507, -0.127], dist: "1675 km" },
-        { name: "Subotica", coords: [46.100, 19.665], dist: "300 km" }, { name: "Vienna", coords: [48.208, 16.373], dist: "1280 km" },
-        { name: "Athens", coords: [37.983, 23.727], dist: "2800 km" }, { name: "Glasgow", coords: [55.864, -4.251], dist: "3800 km" },
-        { name: "Amman", coords: [31.945, 35.928], dist: "3300 km" }, { name: "Amsterdam", coords: [52.367, 4.904], dist: "575 km" },
-        { name: "Berlin", coords: [52.520, 13.405], dist: "650 km" }, { name: "Brussels", coords: [50.850, 4.351], dist: "800 km" },
-        { name: "Copenhagen", coords: [55.676, 12.568], dist: "1250 km" }, { name: "Galway", coords: [53.270, -9.056], dist: "3200 km" },
-        { name: "Istanbul", coords: [41.008, 28.978], dist: "1100 km" }, { name: "Kanjiža", coords: [46.062, 20.048], dist: "2000 km" },
-        { name: "Madrid", coords: [40.416, -3.703], dist: "2400 km" }, { name: "Ystad", coords: [55.429, 13.820], dist: "7000 km" },
-        { name: "Columbia, SC", coords: [34.000, -81.034], dist: "13500 km" }, { name: "Pune", coords: [18.520, 73.856], dist: "2800 km" },
-        { name: "Vientiane", coords: [17.975, 102.633], dist: "9000 km" }, { name: "Kigali", coords: [-1.944, 30.061], dist: "6100 km" },
+        { name: "Szeged", coords: [46.253, 20.141], dist: "1450 km" },
+        { name: "London", coords: [51.507, -0.127], dist: "1675 km" },
+        { name: "Subotica", coords: [46.100, 19.665], dist: "300 km" },
+        { name: "Vienna", coords: [48.208, 16.373], dist: "1280 km" },
+        { name: "Athens", coords: [37.983, 23.727], dist: "2800 km" },
+        { name: "Glasgow", coords: [55.864, -4.251], dist: "3800 km" },
+        { name: "Amman", coords: [31.945, 35.928], dist: "3300 km" },
+        { name: "Amsterdam", coords: [52.367, 4.904], dist: "575 km" },
+        { name: "Berlin", coords: [52.520, 13.405], dist: "650 km" },
+        { name: "Brussels", coords: [50.850, 4.351], dist: "800 km" },
+        { name: "Copenhagen", coords: [55.676, 12.568], dist: "1250 km" },
+        { name: "Galway", coords: [53.270, -9.056], dist: "3200 km" },
+        { name: "Istanbul", coords: [41.008, 28.978], dist: "1100 km" },
+        { name: "Kanjiža", coords: [46.062, 20.048], dist: "2000 km" },
+        { name: "Madrid", coords: [40.416, -3.703], dist: "2400 km" },
+        { name: "Ystad", coords: [55.429, 13.820], dist: "7000 km" },
+        { name: "Columbia, SC", coords: [34.000, -81.034], dist: "13500 km" },
+        { name: "Pune", coords: [18.520, 73.856], dist: "2800 km" },
+        { name: "Vientiane", coords: [17.975, 102.633], dist: "9000 km" },
+        { name: "Kigali", coords: [-1.944, 30.061], dist: "6100 km" },
         { name: "Szeged", coords: [46.253, 20.141], dist: "" }
     ];
 
-    const map = L.map('map').setView([40, 10], 3);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+    const map = L.map('map').setView([30, 10], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
+    // Városok és szakaszok kirajzolása
     expedition.forEach((point, i) => {
-        // Számozott ikon (0-20)
-        const icon = L.divIcon({
-            className: 'number-icon',
-            html: i,
-            iconSize: [22, 22]
+        // Állandó névfelirat a város felett
+        L.circleMarker(point.coords, {
+            radius: 5, fillColor: "#000080", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1
+        }).addTo(map).bindTooltip(point.name, { 
+            permanent: true, 
+            direction: "top", 
+            className: "leaflet-tooltip-own",
+            offset: [0, -5]
         });
 
-        L.marker(point.coords, { icon: icon }).addTo(map)
-            .bindTooltip(`${i}. ${point.name}`, { direction: 'top', className: 'leaflet-tooltip-own' });
-
-        // Nyilas vonal a következő pontig
+        // Szakasz rajzolása a következő városig
         if (i < expedition.length - 1) {
             const nextPoint = expedition[i+1];
-            const polyline = L.polyline([point.coords, nextPoint.coords], {
-                color: '#0088cc', weight: 2, opacity: 0.6
+            const segment = L.polyline.antPath([point.coords, nextPoint.coords], {
+                delay: 2500, dashArray: [10, 20], weight: 3, color: '#0088cc', pulseColor: '#ffeb00'
             }).addTo(map);
 
-            // Nyilak hozzáadása a vonalra
-            L.polylineDecorator(polyline, {
-                patterns: [
-                    { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 12, polygon: false, pathOptions: { color: '#000080', weight: 3, opacity: 1 } }) }
-                ]
-            }).addTo(map);
+            // Távolság megjelenítése csak kurzorhoz (hover)
+            segment.bindTooltip(`Távolság: ${point.dist}`, { sticky: true });
 
-            polyline.bindTooltip(`Távolság: ${point.dist}`, { sticky: true });
+            // Vizuális visszajelzés hover esetén
+            segment.on('mouseover', function() {
+                this.setStyle({ weight: 6, color: '#000080' });
+            });
+            segment.on('mouseout', function() {
+                this.setStyle({ weight: 3, color: '#0088cc' });
+            });
         }
     });
 
