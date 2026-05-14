@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SZTE Alma Mater - Lépjük meg! Eredmények</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0056b3; }
+        .stats-box { text-align: center; font-size: 1.5em; margin: 20px 0; padding: 20px; background: #e9f2ff; border-radius: 8px; border-left: 5px solid #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #0056b3; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        canvas { margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SZTE Alma Mater - Lépjük meg!</h1>
+    <div id="overall" class="stats-box">Összesített eredmény: Betöltés...</div>
+    
+    <canvas id="leaderboardChart"></canvas>
+
+    <table id="leaderboardTable">
+        <thead>
+            <tr>
+                <th>Helyezés</th>
+                <th>Kar / Egység</th>
+                <th>Összesen (km)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Itt jelennek meg az adatok -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // IDE MÁSOLD A GOOGLE SHEETS CSV LINKJÉT:
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRAobnWXpKnU1uRe5mbFogcacGNhwjLtWKtKS8kcyzJFhTwAf1DCkB-CfJY4GSlcyFp63RsrFKSrAK/pub?output=csv';
+
+    function updateDashboard() {
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                const data = results.data;
+                
+                // Adatok tisztítása és rendezése (feltételezve, hogy 'Kar' és 'km' az oszlopfejléc)
+                let sortedData = data
+                    .filter(row => row.Kar && row.km)
+                    .map(row => ({
+                        kar: row.Kar,
+                        km: parseFloat(row.km.replace(',', '.')) || 0
+                    }))
+                    .sort((a, b) => b.km - a.km);
+
+                renderTable(sortedData);
+                renderChart(sortedData);
+                
+                const totalKm = sortedData.reduce((sum, item) => sum + item.km, 0);
+                document.getElementById('overall').innerText = `Összesített eredmény: ${totalKm.toLocaleString('hu-HU')} km`;
+            }
+        });
+    }
+
+    function renderTable(data) {
+        const tbody = document.querySelector('#leaderboardTable tbody');
+        tbody.innerHTML = '';
+        data.forEach((item, index) => {
+            const row = `<tr>
+                <td>${index + 1}.</td>
+                <td>${item.kar}</td>
+                <td>${item.km.toLocaleString('hu-HU')}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    let myChart;
+    function renderChart(data) {
+        const ctx = document.getElementById('leaderboardChart').getContext('2d');
+        
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(item => item.kar),
+                datasets: [{
+                    label: 'Megtett kilométerek',
+                    data: data.map(item => item.km),
+                    backgroundColor: '#0056b3',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    updateDashboard();
+</script>
+
+</body>
+</html>
