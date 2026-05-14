@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SZTE Alma Mater - Lépjük meg! Eredmények</title>
+    <title>SZTE Alma Mater - Lépjük meg!</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Globe.gl könyvtár hozzáadása -->
     <script src="//unpkg.com/globe.gl"></script>
     <style>
         :root {
@@ -19,23 +18,22 @@
         .container { max-width: 1100px; margin: auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
         .logo-box { text-align: center; margin-bottom: 25px; }
         .logo-box img { max-height: 120px; width: auto; }
-        h1 { text-align: center; color: var(--alapkek); margin-bottom: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
+        h1 { text-align: center; color: var(--alapkek); margin-bottom: 30px; font-weight: 800; text-transform: uppercase; letter-spacing: -1px; }
         
-        /* Statisztikai kártya */
-        .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 8px 20px rgba(0,0,128,0.2); border-bottom: 5px solid var(--sarga); }
+        .stats-card { background: linear-gradient(135deg, var(--alapkek), var(--vilagoskek)); color: white; text-align: center; padding: 35px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 8px 20px rgba(0,0,128,0.2); border-bottom: 5px solid var(--sarga); }
         .stats-card .label { font-size: 1rem; font-weight: 300; text-transform: uppercase; letter-spacing: 2px; }
         .stats-card .value { font-size: 4rem; font-weight: 800; display: block; margin-top: 5px; color: var(--sarga); }
         
-        /* Földgömb szekció */
-        .globe-section { margin-bottom: 40px; text-align: center; }
-        .globe-section h2 { color: var(--alapkek); margin-bottom: 15px; text-transform: uppercase; font-size: 1.2rem; }
-        #globeViz { height: 500px; width: 100%; border-radius: 15px; overflow: hidden; background: #fff; border: 1px solid #eee; }
+        .chart-wrapper { position: relative; height: 600px; margin-bottom: 50px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 40px; font-size: 0.95rem; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 60px; font-size: 0.95rem; }
         th, td { padding: 18px; text-align: left; border-bottom: 1px solid #eee; }
         th { color: var(--alapkek); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
         tr:hover { background-color: #fcfcfc; }
-        .chart-wrapper { position: relative; height: 750px; margin-top: 20px; }
+
+        .globe-section { margin-top: 40px; text-align: center; border-top: 2px solid #eee; padding-top: 40px; }
+        .globe-section h2 { color: var(--alapkek); margin-bottom: 20px; text-transform: uppercase; font-size: 1.5rem; }
+        #globeViz { height: 600px; width: 100%; border-radius: 15px; overflow: hidden; background: #ffffff; }
     </style>
 </head>
 <body>
@@ -49,14 +47,7 @@
     
     <div class="stats-card">
         <span class="label">Eddig közösen megtett távolság</span>
-        <span id="overall" class="value">... km</span>
-    </div>
-
-    <!-- Virtuális Expedíció Földgömb -->
-    <div class="globe-section">
-        <h2>Virtuális Expedíció Útvonala</h2>
-        <div id="globeViz"></div>
-        <p style="font-size: 0.8rem; color: #777; margin-top: 10px;">Interaktív földgömb: mozgasd az egeret a forgatáshoz!</p>
+        <span id="overall" class="value">0 km</span>
     </div>
 
     <div class="chart-wrapper">
@@ -73,24 +64,24 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    <!-- A földgömb legalulra került -->
+    <div class="globe-section">
+        <h2>Virtuális Expedíció Útvonala</h2>
+        <div id="globeViz"></div>
+    </div>
 </div>
 
 <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRAobnWXpKnU1uRe5mbFogcacGNhwjLtWKtKS8kcyzJFhTwAf1DCkB-CfJY4GSlcyFp63RsrFKSrAK/pub?gid=38589347&single=true&output=csv';
 
     const fullNames = {
-        'ÁJTK': 'Állam- és Jogtudományi Kar',
-        'BTK': 'Bölcsészettudományi és Társadalomtudományi Kar',
-        'ETSZK': 'Egészségtudományi és Szociális Képzési Kar',
-        'FOK': 'Fogorvostudományi Kar',
-        'GTK': 'Gazdaságtudományi Kar',
-        'GYTK': 'Gyógyszerésztudományi Kar',
-        'JGYPK': 'Juhász Gyula Pedagógusképző Kar',
-        'MGK': 'Mezőgazdasági Kar',
-        'MK': 'Mérnöki Kar',
-        'SZAOK': 'Szent-Györgyi Albert Orvostudományi Kar',
-        'TTIK': 'Természettudományi és Informatikai Kar',
-        'KKL': 'SZTE Klebelsberg Könyvtár',
+        'ÁJTK': 'Állam- és Jogtudományi Kar', 'BTK': 'Bölcsészettudományi és Társadalomtudományi Kar',
+        'ETSZK': 'Egészségtudományi és Szociális Képzési Kar', 'FOK': 'Fogorvostudományi Kar',
+        'GTK': 'Gazdaságtudományi Kar', 'GYTK': 'Gyógyszerésztudományi Kar',
+        'JGYPK': 'Juhász Gyula Pedagógusképző Kar', 'MGK': 'Mezőgazdasági Kar',
+        'MK': 'Mérnöki Kar', 'SZAOK': 'Szent-Györgyi Albert Orvostudományi Kar',
+        'TTIK': 'Természettudományi és Informatikai Kar', 'KKL': 'SZTE Klebelsberg Könyvtár',
         'SZAKK': 'Szent-Györgyi Albert Klinikai Központ'
     };
 
@@ -102,41 +93,28 @@
 
     function updateDashboard() {
         Papa.parse(csvUrl, {
-            download: true,
-            header: true,
+            download: true, header: true,
             complete: function(results) {
-                const rawData = results.data;
-                let sortedData = rawData
-                    .filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
-                    .map(row => {
-                        const abbr = row.Kar.trim();
-                        return {
-                            kar: fullNames[abbr] || abbr,
-                            km: cleanNumber(row.km)
-                        };
-                    })
+                const data = results.data.filter(row => row.Kar && row.km && !row.Kar.includes("Overall") && !row.Kar.includes("Átlag"))
+                    .map(row => ({ kar: fullNames[row.Kar.trim()] || row.Kar.trim(), km: cleanNumber(row.km) }))
                     .sort((a, b) => b.km - a.km);
 
-                renderTable(sortedData);
-                renderChart(sortedData);
-                
-                const totalKm = sortedData.reduce((sum, item) => sum + item.km, 0);
-                document.getElementById('overall').innerText = `${totalKm.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km`;
+                renderTable(data);
+                renderChart(data);
+                const total = data.reduce((s, i) => s + i.km, 0);
+                document.getElementById('overall').innerText = `${total.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km`;
             }
         });
     }
 
     function renderTable(data) {
         const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        data.forEach((item, index) => {
-            const row = `<tr>
-                <td style="font-weight:600; color:var(--alapkek);">${index + 1}.</td>
-                <td style="font-weight:400;">${item.kar}</td>
+        tbody.innerHTML = data.map((item, i) => `
+            <tr>
+                <td style="font-weight:600; color:var(--alapkek);">${i + 1}.</td>
+                <td>${item.kar}</td>
                 <td style="font-weight:600; color:var(--vilagoskek);">${item.km.toLocaleString('hu-HU', {maximumFractionDigits: 1})} km</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
+            </tr>`).join('');
     }
 
     let myChart;
@@ -146,91 +124,44 @@
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(item => item.kar),
-                datasets: [{
-                    label: 'Megtett kilométerek',
-                    data: data.map(item => item.km),
-                    backgroundColor: '#0088cc',
-                    hoverBackgroundColor: '#000080',
-                    borderRadius: 8,
-                    barThickness: 22
-                }]
+                labels: data.map(d => d.kar),
+                datasets: [{ label: 'km', data: data.map(d => d.km), backgroundColor: '#0088cc', borderRadius: 8 }]
             },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-                    y: { ticks: { font: { family: 'Poppins', size: 11, weight: 'bold' }, color: '#000080' } }
-                }
-            }
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
-    // Földgömb adatok és inicializálás
+    // Földgömb inicializálása
     const travelRoute = [
-        { name: 'Szeged', lat: 46.253, lng: 20.141 },
-        { name: 'London', lat: 51.507, lng: -0.127 },
-        { name: 'Subotica', lat: 46.100, lng: 19.665 },
-        { name: 'Vienna', lat: 48.208, lng: 16.373 },
-        { name: 'Athens', lat: 37.983, lng: 23.727 },
-        { name: 'Glasgow', lat: 55.864, lng: -4.251 },
-        { name: 'Amman', lat: 31.945, lng: 35.928 },
-        { name: 'Amsterdam', lat: 52.367, lng: 4.904 },
-        { name: 'Berlin', lat: 52.520, lng: 13.405 },
-        { name: 'Brussels', lat: 50.850, lng: 4.351 },
-        { name: 'Copenhagen', lat: 55.676, lng: 12.568 },
-        { name: 'Galway', lat: 53.270, lng: -9.056 },
-        { name: 'Istanbul', lat: 41.008, lng: 28.978 },
-        { name: 'Kanjiža', lat: 46.062, lng: 20.048 },
-        { name: 'Madrid', lat: 40.416, lng: -3.703 },
-        { name: 'Ystad', lat: 55.429, lng: 13.820 },
-        { name: 'Columbia, SC', lat: 34.000, lng: -81.034 },
-        { name: 'Pune', lat: 18.520, lng: 73.856 },
-        { name: 'Vientiane', lat: 17.975, lng: 102.633 },
-        { name: 'Kigali', lat: -1.944, lng: 30.061 },
+        { name: 'Szeged', lat: 46.253, lng: 20.141 }, { name: 'London', lat: 51.507, lng: -0.127 },
+        { name: 'Subotica', lat: 46.100, lng: 19.665 }, { name: 'Vienna', lat: 48.208, lng: 16.373 },
+        { name: 'Athens', lat: 37.983, lng: 23.727 }, { name: 'Glasgow', lat: 55.864, lng: -4.251 },
+        { name: 'Amman', lat: 31.945, lng: 35.928 }, { name: 'Amsterdam', lat: 52.367, lng: 4.904 },
+        { name: 'Berlin', lat: 52.520, lng: 13.405 }, { name: 'Brussels', lat: 50.850, lng: 4.351 },
+        { name: 'Copenhagen', lat: 55.676, lng: 12.568 }, { name: 'Galway', lat: 53.270, lng: -9.056 },
+        { name: 'Istanbul', lat: 41.008, lng: 28.978 }, { name: 'Kanjiža', lat: 46.062, lng: 20.048 },
+        { name: 'Madrid', lat: 40.416, lng: -3.703 }, { name: 'Ystad', lat: 55.429, lng: 13.820 },
+        { name: 'Columbia, SC', lat: 34.000, lng: -81.034 }, { name: 'Pune', lat: 18.520, lng: 73.856 },
+        { name: 'Vientiane', lat: 17.975, lng: 102.633 }, { name: 'Kigali', lat: -1.944, lng: 30.061 },
         { name: 'Szeged', lat: 46.253, lng: 20.141 }
     ];
 
-    const arcsData = [];
+    const arcs = [];
     for (let i = 0; i < travelRoute.length - 1; i++) {
-        arcsData.push({
-            startLat: travelRoute[i].lat,
-            startLng: travelRoute[i].lng,
-            endLat: travelRoute[i+1].lat,
-            endLng: travelRoute[i+1].lng,
-            color: ['#ffeb00', '#0088cc'] 
-        });
+        arcs.push({ startLat: travelRoute[i].lat, startLng: travelRoute[i].lng, endLat: travelRoute[i+1].lat, endLng: travelRoute[i+1].lng, color: ['#ffeb00', '#0088cc'] });
     }
 
-    const globe = Globe()
-      (document.getElementById('globeViz'))
+    const globe = Globe()(document.getElementById('globeViz'))
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
       .backgroundColor('#ffffff')
-      .arcData(arcsData)
-      .arcColor('color')
-      .arcDashLength(0.4)
-      .arcDashGap(4)
-      .arcDashAnimateTime(1500)
-      .arcStroke(0.5)
-      .labelsData(travelRoute)
-      .labelLat(d => d.lat)
-      .labelLng(d => d.lng)
-      .labelText(d => d.name)
-      .labelSize(1.2)
-      .labelDotRadius(0.6)
-      .labelColor(() => '#000080')
-      .pointColor(() => '#ffeb00');
+      .arcData(arcs).arcColor('color').arcDashLength(0.4).arcDashGap(4).arcDashAnimateTime(1500).arcStroke(0.5)
+      .labelsData(travelRoute).labelLat(d => d.lat).labelLng(d => d.lng).labelText(d => d.name).labelSize(1.2).labelColor(() => '#000080');
 
     globe.controls().autoRotate = true;
-    globe.controls().autoRotateSpeed = 0.6;
     globe.pointOfView({ lat: 20, lng: 20, altitude: 2 });
 
     updateDashboard();
     setInterval(updateDashboard, 300000);
 </script>
-
 </body>
 </html>
